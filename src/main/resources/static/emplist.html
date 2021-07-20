@@ -1,0 +1,161 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<title>emplist</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<link rel="stylesheet" type="text/css" href="css/style.css" />
+	</head>
+	<body>
+		<div id="wrap">
+			<div id="top_content"> 
+				<div id="header">
+					<div id="rightheader">
+						<p>
+							2021/11/20
+							<br />
+							<a href="javascript:;" @click="logout">安全退出</a>
+						</p>
+					</div>
+					<div id="topheader">
+						<h1 id="title">
+							<a href="/emp_system/emplist.html">main</a>  <!--点击头部的main跳转到主页-->
+						</h1>
+					</div>
+					<div id="navigation">
+					</div>
+				</div>
+				<div id="content">
+					<p id="whereami">
+					</p>
+					<h1>
+						Welcome {{ user.realname }}!
+						<!--welcome 暂时不实现打印名字-->
+					</h1>
+					<table class="table">
+						<tr class="table_header">
+							<td>
+								ID
+							</td>
+							<td>
+								Name
+							</td>
+							<td>
+								Photo
+							</td>
+							<td>
+								Salary
+							</td>
+							<td>
+								Age
+							</td>
+							<td>
+								Operation
+							</td>
+						</tr>
+						<tr v-for="(emp,index) in emps" :key="emp.id" :class="index%2==0?'row1':'row2'">
+							<td>
+								{{ emp.id }}
+							</td>
+							<td>
+								{{ emp.name }}
+							</td>
+							<td>
+								<img :src="'/emp_system/'+emp.path" style="height: 60px;">
+							</td>
+							<td>
+								{{ emp.salary }}
+							</td>
+							<td>
+								{{ emp.age }}
+							</td>
+							<td>
+								<a href="javascript:;" @click="delEmp(emp.id)">delete emp</a>&nbsp;<a :href="'/emp_system/updateEmp.html?id='+emp.id">update emp</a>
+							</td>
+						</tr>
+					</table>
+					<p>
+						<input type="button" class="button" value="Add Employee" onclick="location='addEmp.html'"/>
+					</p>
+				</div>
+			</div>
+			<div id="footer">
+				<div id="footer_bg">
+				ABC@126.com
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+<script src="/emp_system/js/vue.js"></script>
+<script src="/emp_system/js/axios.min.js"></script>
+<script>
+	var app = new Vue({
+		el:"#wrap",
+		data:{
+			user:{},//存放登陆的用户信息
+			token:"",
+			// tokenjson:{},------------------------------------->问题待解决：这个传递的时候为什么不是json格式
+			emps:[],//用来存放员工信息数组
+		},
+		methods:{
+			logout(){
+				localStorage.removeItem("user");
+				//刷新页面
+				 location.reload();   //带参数的reload(true) 已经不再使用
+				//之所以是用下边的这个，是因为上边的reload是访问emp/findAll,但是token已经清除，虽然所以后台会报异常，但是不是真正的异常，会给维护人员照成麻烦，直接跳到登陆页面最好
+				location.href="/emp_system/login.html";
+			},
+			//删除员工信息
+			delEmp(id){
+				if(window.confirm("确定要删除这条员工信息吗？"))
+				{
+					var _this = this;
+					let param= new URLSearchParams();
+					param.append("token",_this.token);
+					axios.delete("http://localhost:8888/emp_system/emp/delete?id="+id,param).then(res=>{
+						if(res.data.state){
+							alert(res.data.msg+"点击确定返回页面");
+							_this.findAll();//重新加载数据
+						}else{
+							alert(res.data.msg);
+						}
+					})
+				}
+			},
+			//查询员工列表方法
+			findAll(){
+				var _this = this;   /*之所以使用_this，是因为在es6里边改变了this的指向*/
+				//let param= new URLSearchParams();
+				//param.append("token",_this.token);
+				// alert(_this.tokenjson.token)//   弹窗能弹出来token的信息，但是下边这行this.tokenjson  传到后端获取token是空的，改成{token:this.tokenjson}是对的，这个是因为这个tokenjson不是json格式吗直接传this.tokenjson是失败的
+				axios.post("http://localhost:8888/emp_system/emp/findAll").then(res=>{
+				/*	if(res.data.state) {
+						_this.emps = res.data.emplist;
+						_this.realname = res.data.realname;
+					}
+					else{
+						alert("您的登陆信息已失效,点击确定跳转至登陆页面");
+						location.href="/emp_system/login.html";
+					}*/
+                   // _this.emps = res.data.emplist;
+                    _this.emps = res.data;
+				});
+			}
+		},
+		created(){
+			//var _this = this;
+			var userString = localStorage.getItem("user");
+			if(userString){
+				//将JSON转化为user对象
+				this.user=JSON.parse(userString);
+				//_this.token=token;
+				//this.findAll();
+			}else{
+				alert("您尚未登陆,点击确定跳转至登陆页面!");
+				location.href="/emp_system/login.html";
+			}
+			//查询所有信息
+            this.findAll()
+		}
+	});
+</script>

@@ -1,0 +1,201 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+	<head>
+		<title>update Emp</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<link rel="stylesheet" type="text/css"
+			href="css/style.css" />
+	</head>
+
+	<body>
+		<div id="wrap">
+			<div id="top_content">
+				<div id="header">
+					<div id="rightheader">
+						<p>
+							2009/11/20
+							<br />
+							<a href="javascript:;" @click="logout">安全退出</a>
+						</p>
+					</div>
+					<div id="topheader">
+						<h1 id="title">
+							<a href="/emp_system/emplist.html">main</a>
+						</h1>
+					</div>
+					<div id="navigation">
+					</div>
+				</div>
+				<div id="content">
+					<p id="whereami">
+					</p>
+					<h1>
+						update Emp info:
+					</h1>
+					<form action="emplist.html" method="post">
+						<table cellpadding="0" cellspacing="0" border="0"
+							class="form_table">
+							<tr>
+								<td valign="middle" align="right">
+									id:
+								</td>
+								<td valign="middle" align="left">
+									{{emp.id}}
+								</td>
+							</tr>
+							<tr>
+								<td valign="middle" align="right">
+									old photo:
+								</td>
+								<td valign="middle" align="left">
+									<img :src="'/emp_system/'+emp.path" style="height: 60px;">
+								</td>
+							</tr>
+							<tr>
+								<td valign="middle" align="right">
+									name:
+								</td>
+								<td valign="middle" align="left">
+									<input type="text" class="inputgri" v-model="emp.name"/>
+								</td>
+							</tr>
+							<tr>
+								<td valign="middle" align="right">
+									photo:
+								</td>
+								<td valign="middle" align="left">
+									<input type="file" ref="photo" name="photo" />
+								</td>
+							</tr>
+							<tr>
+								<td valign="middle" align="right">
+									salary:
+								</td>
+								<td valign="middle" align="left">
+									<input type="text" class="inputgri" v-model="emp.salary"/>
+								</td>
+							</tr>
+							<tr>
+								<td valign="middle" align="right">
+									age:
+								</td>
+								<td valign="middle" align="left">
+									<input type="text" class="inputgri" v-model="emp.age"/>
+								</td>
+							</tr>
+						</table>
+						<p>
+							<input type="button" @click="editEmp" class="button" value="Confirm" />
+						</p>
+					</form>
+				</div>
+			</div>
+			<div id="footer">
+				<div id="footer_bg">
+					ABC@126.com
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+<script src="/emp_system/js/vue.js"></script>
+<script src="/emp_system/js/axios.min.js"></script>
+<script>
+	var app = new Vue({
+		el:"#wrap",
+		data:{
+			user:{}, //存放登陆的用户信息
+			token:"",
+			emp:{}
+		},
+		methods:{
+			logout(){
+				localStorage.removeItem("user");
+				//刷新页面
+				location.href="/emp_system/login.html";
+			},
+			//修改信息
+			editEmp(){
+				console.log(this.emp);
+				//获取文件信息
+				console.log(this.$refs.photo.files[0]);
+				var formData = new FormData();
+				formData.append("id",this.emp.id);
+				formData.append("name",this.emp.name);
+				formData.append("path",this.emp.path);
+				formData.append("salary",this.emp.salary);
+				formData.append("age",this.emp.age);
+				formData.append("photo",this.$refs.photo.files[0]);
+				//formData.append("token",this.token);
+
+				var _this = this;
+				//文件上传时  请求方式必须是post  enctype必须为multipart-data
+				axios({
+					method:"post",
+					url:"http://localhost:8888/emp_system/emp/update",
+					data:formData,
+					headers:{
+						'content-type':'multipart/form-data'
+					}
+				}).then(res=>{
+					console.log(res.data);
+					if(res.data.state){
+						if(window.confirm(res.data.msg+"点击确定跳转至列表页面！")){
+							location.href="/emp_system/emplist.html";
+						}
+					}else
+					{
+						alert(res.data.msg);
+					}
+				});
+			}
+		},
+		created(){
+
+            var userString = localStorage.getItem("user");
+            if(userString){
+                //将JSON转化为user对象
+                this.user=JSON.parse(userString);
+                //_this.token=token;
+                //this.findAll();
+            }else{
+                alert("您尚未登陆,点击确定跳转至登陆页面!");
+                location.href="/emp_system/login.html";
+            }
+            //获取对应id信息
+            var start = location.href.lastIndexOf("=");
+            var id  = location.href.substring(start+1);
+            console.log(id)
+            //查询一个人的信息
+            var _this = this
+            axios.get("http://localhost:8888/emp_system/emp/findOne?id="+id).then(res=>{
+                console.log(res.data)
+                _this.emp=res.data
+            })
+
+		/*	var user = localStorage.getItem("user");
+			if(user)   //把相关操作放到这个if里边就不会当出错的时候虽然跳转到首页了，但是ifelse下边的还会执行，放发if中就可以了
+			{
+				//将JSON转化为user对象
+				// this.user=JSON.parse(userString);
+				this.token = token;
+				//获取对应id信息
+				var start = location.href.lastIndexOf("=");
+				var id =location.href.substring(start+1);
+				console.log(id);
+				var _this = this;
+
+				//查询一个人信息
+				let param= new URLSearchParams();
+				param.append("token",_this.token);
+				axios.post("http://localhost:8989/ems_vue/emp/findOne?id="+id,param).then(res=>{
+					console.log(res.data);
+					_this.emp = res.data;
+				});
+			}else{
+				alert("您尚未登陆,点击确定跳转至登陆页面");
+				location.href="/ems_vue/login.html";
+			}*/
+		}
+	});
+</script>

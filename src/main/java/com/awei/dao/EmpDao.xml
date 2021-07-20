@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.awei.dao.EmpDao">
+    <!--设置使用RedisCache这个缓存-->
+   <!-- <cache type="com.englishcode.cache.RedisCache"/>-->
+    <!--虽然返回的是一个Emp的列表类型，但是，可以直接使用resultType是Emp的就可以-->
+  <select id="findAll" resultType="Emp">
+        select id,name,path,salary,age from t_emp
+    </select>
+
+       <insert id="save" parameterType="Emp" useGeneratedKeys="true" keyProperty="id">
+           insert into t_emp values (#{id},#{name},#{path},#{salary},#{age})
+       </insert>
+    <delete id="delete" parameterType="String">
+              delete from t_emp where id=#{id}
+          </delete>
+    <select id="findOne" parameterType="String" resultType="Emp">
+              select id,name,path,salary,age from t_emp where id=#{id}
+          </select>
+
+          <update id="update" parameterType="Emp">
+              update t_emp set
+              name =#{name},
+              path =#{path},
+              salary =#{salary},
+              age =#{age}
+              where id = #{id}
+          </update>
+</mapper>
